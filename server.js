@@ -14,7 +14,7 @@ app.use(express.static('public'));
 
 let db;
 
-// ─── DB INIT ─────────────────────────────────────────────────────────────────
+// ─── INIT BD ─────────────────────────────────────────────────────────────────
 async function initDB() {
   const SQL = await initSqlJs();
 
@@ -85,7 +85,7 @@ async function initDB() {
     horarioSaida TEXT
   )`);
 
-  // Seed data if empty
+  // Dados de sementes se vazio
   const count = db.exec("SELECT COUNT(*) as c FROM planos")[0];
   if (count && count.values[0][0] === 0) {
     seedData();
@@ -127,7 +127,7 @@ function persistDB() {
   fs.writeFileSync(DB_PATH, Buffer.from(data));
 }
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
+// ─── AUXILIARES ───────────────────────────────────────────────────────────────
 function getAllRows(sql, params = []) {
   try {
     const result = db.exec(sql, params);
