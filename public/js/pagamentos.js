@@ -16,14 +16,14 @@ async function renderPagamentos(c) {
         <div class="font-bebas text-[1.8rem] tracking-[2px] text-[var(--text)]">Pagamentos</div>
         <div class="text-[var(--muted)] text-[0.82rem] mt-0.5">${pags.length} registros</div>
       </div>
-      <button class="${BTN_PRI}" onclick="openModalPag()">＋ Registrar Pagamento</button>
+      <button class="${BTN_PRI}" data-action="openModalPag">＋ Registrar Pagamento</button>
     </div>
     ${panelPlain(`
       <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
         <span class="font-semibold text-[0.9rem]">Histórico de Pagamentos</span>
         <div class="flex gap-2 items-center">
-          <input type="month" id="filtroMes" value="${mesAtual}" oninput="filtrarPag()" style="margin:0;width:auto">
-          <input placeholder="🔍 Buscar aluno..." id="searchPag" oninput="filtrarPag()" style="margin:0;max-width:160px">
+          <input type="month" id="filtroMes" value="${mesAtual}" data-action="filtrarPag" style="margin:0;width:auto">
+          <input placeholder="🔍 Buscar aluno..." id="searchPag" data-action="filtrarPag" style="margin:0;max-width:160px">
         </div>
       </div>
       <div class="overflow-x-auto">
@@ -38,7 +38,7 @@ async function renderPagamentos(c) {
     window.openModalPag = () => {
         openModal('Registrar Pagamento', `
       <div class="${FGRID}">
-        <div class="${FG_FULL}"><label>Aluno *</label><select id="pg_aluno" onchange="autoPreencherValor()">${alunoOpts}</select></div>
+        <div class="${FG_FULL}"><label>Aluno *</label><select id="pg_aluno" data-action="autoPreencherValor">${alunoOpts}</select></div>
         <div class="${FG}"><label>Valor (R$) *</label><input id="pg_valor" type="number" step="0.01" placeholder="0,00"></div>
         <div class="${FG}"><label>Data do Pagamento *</label><input id="pg_data" type="date" value="${hoje}"></div>
         <div class="${FG}"><label>Referência (mês) *</label><input id="pg_ref" value="${mesAtual}" placeholder="2026-05"></div>
@@ -47,8 +47,8 @@ async function renderPagamentos(c) {
         </div>
         <div class="${FG}"><label>Observações</label><input id="pg_obs" placeholder="Opcional"></div>
       </div>`,
-            `<button class="${BTN_SEC}" onclick="closeModal()">Cancelar</button>
-       <button class="${BTN_PRI}" onclick="submitting(this, salvarPagamento)">Registrar</button>`
+            `<button class="${BTN_SEC}" data-action="closeModal">Cancelar</button>
+       <button class="${BTN_PRI}" data-action="submitPagamento">Registrar</button>`
         );
         setTimeout(window.autoPreencherValor, 100);
     };
@@ -101,6 +101,6 @@ function pagRows(pags) {
       <td>${fmtDate(p.dataPagamento)}</td>
       <td class="text-[var(--muted)]">${escape(p.metodoPagamento || '—')}</td>
       <td>${badge(p.status || 'Pago', 'green')}</td>
-      <td><button class="${BTN_DNG_SM}" onclick="deletarPag(${p.id})">🗑️</button></td>
+      <td><button class="${BTN_DNG_SM}" data-action="deletarPag" data-id="${p.id}">🗑️</button></td>
     </tr>`).join('');
 }

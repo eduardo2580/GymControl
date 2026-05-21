@@ -18,7 +18,7 @@
             <div class="font-bebas text-6xl tracking-widest text-[var(--accent)] mb-1">GYM<span class="text-[var(--text)]">CONTROL</span>
             </div>
             <p class="text-[var(--muted)] mb-9 text-xs uppercase tracking-widest">Sistema de Gerenciamento de Academia</p>
-            <form id="loginForm" class="flex flex-col gap-3 mb-4 text-left" onsubmit="event.preventDefault(); doLogin();">
+            <form id="loginForm" class="flex flex-col gap-3 mb-4 text-left" data-action="login">
                 <label class="text-xs uppercase tracking-widest text-[var(--muted)]">Email
                     <input id="loginEmail" type="email" autocomplete="username" required
                         class="mt-1 w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] focus:outline-none focus:border-[var(--accent)]" />
@@ -51,12 +51,12 @@
             <div class="font-bebas text-[1.8rem] tracking-[3px] text-[var(--accent)]">GYM<span class="text-[var(--text)]">CONTROL</span>
             </div>
             <div class="flex items-center gap-3 text-[var(--muted)] text-[0.85rem]">
-                <button class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] text-[0.78rem] font-semibold cursor-pointer hover:-translate-y-px transition-transform md:hidden" onclick="toggleMobileNav('adminNav')">☰ Menu</button>
+                <button class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] text-[0.78rem] font-semibold cursor-pointer hover:-translate-y-px transition-transform md:hidden" data-action="toggleMobileNav" data-args='["adminNav"]'>☰ Menu</button>
                 <span class="bg-[var(--surface2)] border border-[var(--border)] px-3 py-1 rounded-full font-medium text-[var(--text)]">👨‍💼
                     Administrador</span>
                 <button
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] text-[0.78rem] font-semibold cursor-pointer hover:-translate-y-px transition-transform"
-                    onclick="logout()">Sair</button>
+                    data-action="logout">Sair</button>
             </div>
         </header>
         <div class="flex flex-col md:flex-row min-h-[calc(100vh-60px)]">
@@ -65,45 +65,45 @@
                 <div class="px-3.5 text-[0.68rem] font-bold tracking-[1.5px] uppercase text-[var(--muted)] mt-3 mb-1">Principal
                 </div>
                 <div class="nav-item active flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-tab="dashboard" onclick="navTo(this,'dashboard'); closeMobileNav('adminNav')">
+                    data-tab="dashboard" data-action="navAdminTab">
                     <span class="text-base w-5 text-center">📊</span> Dashboard
                 </div>
                 <div class="px-3.5 text-[0.68rem] font-bold tracking-[1.5px] uppercase text-[var(--muted)] mt-3 mb-1">Cadastros
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-tab="alunos" onclick="navTo(this,'alunos'); closeMobileNav('adminNav')">
+                    data-tab="alunos" data-action="navAdminTab">
                     <span class="text-base w-5 text-center">👥</span> Alunos
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-tab="professores" onclick="navTo(this,'professores'); closeMobileNav('adminNav')">
+                    data-tab="professores" data-action="navAdminTab">
                     <span class="text-base w-5 text-center">🏋️</span> Professores
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-tab="planos" onclick="navTo(this,'planos'); closeMobileNav('adminNav')">
+                    data-tab="planos" data-action="navAdminTab">
                     <span class="text-base w-5 text-center">📋</span> Planos
                 </div>
                 <div class="px-3.5 text-[0.68rem] font-bold tracking-[1.5px] uppercase text-[var(--muted)] mt-3 mb-1">Operações
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-tab="pagamentos" onclick="navTo(this,'pagamentos'); closeMobileNav('adminNav')">
+                    data-tab="pagamentos" data-action="navAdminTab">
                     <span class="text-base w-5 text-center">💵</span> Pagamentos
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-tab="inadimplentes" onclick="navTo(this,'inadimplentes'); closeMobileNav('adminNav')">
+                    data-tab="inadimplentes" data-action="navAdminTab">
                     <span class="text-base w-5 text-center">⚠️</span> Inadimplentes
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-tab="frequencia" onclick="navTo(this,'frequencia'); closeMobileNav('adminNav')">
+                    data-tab="frequencia" data-action="navAdminTab">
                     <span class="text-base w-5 text-center">📅</span> Frequência
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-tab="relatorios" onclick="navTo(this,'relatorios'); closeMobileNav('adminNav')">
+                    data-tab="relatorios" data-action="navAdminTab">
                     <span class="text-base w-5 text-center">📈</span> Relatórios
                 </div>
                 <div class="px-3.5 text-[0.68rem] font-bold tracking-[1.5px] uppercase text-[var(--muted)] mt-3 mb-1">Sistema
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-tab="backup" onclick="navTo(this,'backup'); closeMobileNav('adminNav')">
+                    data-tab="backup" data-action="navAdminTab">
                     <span class="text-base w-5 text-center">💾</span> Backup
                 </div>
             </nav>
@@ -118,12 +118,12 @@
             <div class="font-bebas text-[1.8rem] tracking-[3px] text-[var(--accent)]">GYM<span class="text-[var(--text)]">CONTROL</span>
             </div>
             <div class="flex items-center gap-3 text-[var(--muted)] text-[0.85rem]">
-                <button class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] text-[0.78rem] font-semibold cursor-pointer hover:-translate-y-px transition-transform md:hidden" onclick="toggleMobileNav('profNav')">☰ Menu</button>
+                <button class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] text-[0.78rem] font-semibold cursor-pointer hover:-translate-y-px transition-transform md:hidden" data-action="toggleMobileNav" data-args='["profNav"]'>☰ Menu</button>
                 <span class="bg-[var(--surface2)] border border-[var(--border)] px-3 py-1 rounded-full font-medium text-[var(--text)]"
                     id="profBadge">🏋️ Professor</span>
                 <button
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] text-[0.78rem] font-semibold cursor-pointer hover:-translate-y-px transition-transform"
-                    onclick="logout()">Sair</button>
+                    data-action="logout">Sair</button>
             </div>
         </header>
         <div class="flex flex-col md:flex-row min-h-[calc(100vh-60px)]">
@@ -132,15 +132,15 @@
                 <div class="px-3.5 text-[0.68rem] font-bold tracking-[1.5px] uppercase text-[var(--muted)] mt-3 mb-1">Professor
                 </div>
                 <div class="nav-item active flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-ptab="treinos" onclick="navProf(this,'treinos'); closeMobileNav('profNav')">
+                    data-ptab="treinos" data-action="navProfTab">
                     <span class="text-base w-5 text-center">📋</span> Treinos
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-ptab="alunos-list" onclick="navProf(this,'alunos-list'); closeMobileNav('profNav')">
+                    data-ptab="alunos-list" data-action="navProfTab">
                     <span class="text-base w-5 text-center">👥</span> Meus Alunos
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-ptab="frequencia-prof" onclick="navProf(this,'frequencia-prof'); closeMobileNav('profNav')">
+                    data-ptab="frequencia-prof" data-action="navProfTab">
                     <span class="text-base w-5 text-center">📅</span> Frequência
                 </div>
             </nav>
@@ -155,12 +155,12 @@
             <div class="font-bebas text-[1.8rem] tracking-[3px] text-[var(--accent)]">GYM<span class="text-[var(--text)]">CONTROL</span>
             </div>
             <div class="flex items-center gap-3 text-[var(--muted)] text-[0.85rem]">
-                <button class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] text-[0.78rem] font-semibold cursor-pointer hover:-translate-y-px transition-transform md:hidden" onclick="toggleMobileNav('alunoNav')">☰ Menu</button>
+                <button class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] text-[0.78rem] font-semibold cursor-pointer hover:-translate-y-px transition-transform md:hidden" data-action="toggleMobileNav" data-args='["alunoNav"]'>☰ Menu</button>
                 <span class="bg-[var(--surface2)] border border-[var(--border)] px-3 py-1 rounded-full font-medium text-[var(--text)]"
                     id="alunoBadge">🏅 Aluno</span>
                 <button
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] text-[0.78rem] font-semibold cursor-pointer hover:-translate-y-px transition-transform"
-                    onclick="logout()">Sair</button>
+                    data-action="logout">Sair</button>
             </div>
         </header>
         <div class="flex flex-col md:flex-row min-h-[calc(100vh-60px)]">
@@ -168,19 +168,19 @@
                 class="hidden md:block w-full md:w-[220px] bg-[var(--surface)] border-t border-[var(--border)] md:border-t-0 md:border-r py-5 shrink-0 sticky md:top-[60px] h-auto md:h-[calc(100vh-60px)] overflow-x-auto md:overflow-y-auto responsive-nav">
                 <div class="px-3.5 text-[0.68rem] font-bold tracking-[1.5px] uppercase text-[var(--muted)] mt-3 mb-1">Aluno</div>
                 <div class="nav-item active flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-atab="meu-perfil" onclick="navAluno(this,'meu-perfil'); closeMobileNav('alunoNav')">
+                    data-atab="meu-perfil" data-action="navAlunoTab">
                     <span class="text-base w-5 text-center">👤</span> Meu Perfil
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-atab="meus-treinos" onclick="navAluno(this,'meus-treinos'); closeMobileNav('alunoNav')">
+                    data-atab="meus-treinos" data-action="navAlunoTab">
                     <span class="text-base w-5 text-center">💪</span> Meus Treinos
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-atab="meus-pagamentos" onclick="navAluno(this,'meus-pagamentos'); closeMobileNav('alunoNav')">
+                    data-atab="meus-pagamentos" data-action="navAlunoTab">
                     <span class="text-base w-5 text-center">💳</span> Pagamentos
                 </div>
                 <div class="nav-item flex items-center gap-2.5 px-5 py-2.5 text-[var(--muted)] cursor-pointer transition-all border-l-[3px] border-transparent font-medium hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    data-atab="minha-frequencia" onclick="navAluno(this,'minha-frequencia'); closeMobileNav('alunoNav')">
+                    data-atab="minha-frequencia" data-action="navAlunoTab">
                     <span class="text-base w-5 text-center">📅</span> Frequência
                 </div>
             </nav>
@@ -189,7 +189,7 @@
                     <label
                         class="text-[0.75rem] font-semibold uppercase tracking-[0.5px] text-[var(--muted)] min-w-[80px]">Selecionar
                         aluno:</label>
-                    <select id="alunoSelect" onchange="selecionarAluno()"
+                    <select id="alunoSelect" data-action="selecionarAluno"
                         class="bg-[var(--surface2)] border border-[var(--border)] rounded-lg text-[var(--text)] text-[0.9rem] px-3 py-2 max-w-[280px] transition-colors">
                         <option value="">-- Selecione seu nome --</option>
                     </select>
@@ -202,14 +202,14 @@
     <!-- ─── MODAL ─────────────────────────────────────────────────────────────────── -->
     <div id="modalOverlay"
         class="fixed inset-0 bg-black/70 z-[1000] flex items-center justify-center p-5 animate-fadeIn"
-        style="display:none !important;" onclick="closeModalOutside(event)">
+        style="display:none !important;" data-action="closeModalOutside">
         <div class="modal bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto shadow-[0_20px_60px_rgba(0,0,0,0.5)] animate-slideUp"
             id="modalBox">
             <div class="flex items-center justify-between px-6 py-5 border-b border-[var(--border)]">
                 <span class="font-bold text-base" id="modalTitle">Modal</span>
                 <button
                     class="bg-transparent border-none text-[var(--muted)] text-xl cursor-pointer px-1.5 py-0.5 rounded hover:text-[var(--text)] hover:bg-[var(--surface2)]"
-                    onclick="closeModal()">✕</button>
+                    data-action="closeModal">✕</button>
             </div>
             <div class="p-6" id="modalBody"></div>
             <div class="px-6 py-4 border-t border-[var(--border)] flex justify-end gap-2.5" id="modalFooter"></div>

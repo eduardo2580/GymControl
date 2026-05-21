@@ -11,12 +11,12 @@ async function renderFrequenciaAdmin(c) {
         <div class="font-bebas text-[1.8rem] tracking-[2px] text-[var(--text)]">Frequência</div>
         <div class="text-[var(--muted)] text-[0.82rem] mt-0.5">Check-in de alunos</div>
       </div>
-      <button class="${BTN_PRI}" onclick="openModalFreq()">＋ Registrar Check-in</button>
+      <button class="${BTN_PRI}" data-action="openModalFreq">＋ Registrar Check-in</button>
     </div>
     ${panelPlain(`
       <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
         <span class="font-semibold text-[0.9rem]">Histórico de Frequência</span>
-        <input type="date" id="filtroData" value="${hoje}" oninput="filtrarFreq()" style="margin:0;width:auto">
+        <input type="date" id="filtroData" value="${hoje}" data-action="filtrarFreq" style="margin:0;width:auto">
       </div>
       <div class="overflow-x-auto">
         <table id="freqTable">
@@ -33,8 +33,8 @@ async function renderFrequenciaAdmin(c) {
         <div class="${FG}"><label>Horário Entrada *</label><input type="time" id="fq_hora" value="${horaAtual}"></div>
         <div class="${FG}"><label>Horário Saída</label><input type="time" id="fq_saida"></div>
       </div>`,
-            `<button class="${BTN_SEC}" onclick="closeModal()">Cancelar</button>
-       <button class="${BTN_PRI}" onclick="submitting(this, salvarFreq)">Registrar</button>`
+            `<button class="${BTN_SEC}" data-action="closeModal">Cancelar</button>
+       <button class="${BTN_PRI}" data-action="submitFreq">Registrar</button>`
         );
     };
 
@@ -67,7 +67,7 @@ function freqRows(freqs) {
       <td>${fmtDate(f.dataEntrada)}</td>
       <td>${badge(f.horarioEntrada || '—', 'blue')}</td>
       <td>${f.horarioSaida ? badge(f.horarioSaida, 'green') : '<span class="text-[var(--muted)]">—</span>'}</td>
-      <td><button class="${BTN_DNG_SM}" onclick="deletarFreq(${f.id})">🗑️</button></td>
+      <td><button class="${BTN_DNG_SM}" data-action="deletarFreq" data-id="${f.id}">🗑️</button></td>
     </tr>`).join('');
 }
 

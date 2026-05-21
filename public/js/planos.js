@@ -7,7 +7,7 @@ async function renderPlanos(c) {
         <div class="font-bebas text-[1.8rem] tracking-[2px] text-[var(--text)]">Planos</div>
         <div class="text-[var(--muted)] text-[0.82rem] mt-0.5">Gerenciar planos de assinatura</div>
       </div>
-      <button class="${BTN_PRI}" onclick="openModalPlano()">＋ Novo Plano</button>
+      <button class="${BTN_PRI}" data-action="openModalPlano">＋ Novo Plano</button>
     </div>
     ${panelPlain(`
       <div class="overflow-x-auto">
@@ -20,8 +20,8 @@ async function renderPlanos(c) {
               <td>${p.duracaoMeses === 1 ? 'Mensal' : `${p.duracaoMeses} meses`}</td>
               <td class="text-[var(--muted)]">${escape(p.descricao || '—')}</td>
               <td class="flex gap-1.5">
-                <button class="${BTN_SEC_SM}" onclick="editarPlano(${p.id})">✏️</button>
-                <button class="${BTN_DNG_SM}" onclick="deletarPlano(${p.id})">🗑️</button>
+                <button class="${BTN_SEC_SM}" data-action="editarPlano" data-id="${p.id}">✏️</button>
+                <button class="${BTN_DNG_SM}" data-action="deletarPlano" data-id="${p.id}">🗑️</button>
               </td>
             </tr>`).join('') :
             `<tr><td colspan="5">${emptyState('', 'Nenhum plano cadastrado')}</td></tr>`
@@ -40,8 +40,8 @@ async function renderPlanos(c) {
         <div class="${FG}"><label>Duração (meses)</label><input id="pl_dur" type="number" value="${p ? p.duracaoMeses : 1}"></div>
         <div class="${FG_FULL}"><label>Descrição</label><input id="pl_desc" value="${p ? escape(p.descricao || '') : ''}"></div>
       </div>`,
-            `<button class="${BTN_SEC}" onclick="closeModal()">Cancelar</button>
-       <button class="${BTN_PRI}" onclick="${p ? `submitting(this, () => salvarEditPlano(${id}))` : 'submitting(this, salvarNovoPlano)'}">Salvar</button>`
+            `<button class="${BTN_SEC}" data-action="closeModal">Cancelar</button>
+       <button class="${BTN_PRI}" data-action="${p ? 'submitEditPlano' : 'submitNovoPlano'}" data-id="${id || ''}">Salvar</button>`
         );
     };
 

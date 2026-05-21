@@ -21,7 +21,7 @@ async function renderInadimplentes(c) {
                 <td>${badge(a.planoNome || '—', 'blue')}</td>
                 <td class="text-[var(--red)] font-semibold">${fmtMoney(plano?.valor || 0)}</td>
                 <td>${escape(a.telefone || '—')}</td>
-                <td><button class="${BTN_SUC_SM}" onclick="registrarPagamentoRapido(${a.id},${plano?.valor || 0})">💵 Registrar Pgto</button></td>
+                <td><button class="${BTN_SUC_SM}" data-action="registrarPagamentoRapido" data-id="${a.id}" data-valor="${plano?.valor || 0}">💵 Registrar Pgto</button></td>
               </tr>`;
             }).join('')}</tbody>
           </table>

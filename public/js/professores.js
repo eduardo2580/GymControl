@@ -7,7 +7,7 @@ async function renderProfessores(c) {
         <div class="font-bebas text-[1.8rem] tracking-[2px] text-[var(--text)]">Professores</div>
         <div class="text-[var(--muted)] text-[0.82rem] mt-0.5">${profs.length} cadastrados</div>
       </div>
-      <button class="${BTN_PRI}" onclick="openModalProf()">＋ Novo Professor</button>
+      <button class="${BTN_PRI}" data-action="openModalProf">＋ Novo Professor</button>
     </div>
     ${panelPlain(`
       <div class="overflow-x-auto">
@@ -21,8 +21,8 @@ async function renderProfessores(c) {
               <td>${escape(p.telefone || '—')}</td>
               <td class="text-[var(--muted)]">${escape(p.email || '—')}</td>
               <td class="flex gap-1.5">
-                <button class="${BTN_SEC_SM}" onclick="editarProf(${p.id})">✏️</button>
-                <button class="${BTN_DNG_SM}" onclick="deletarProf(${p.id})">🗑️</button>
+                <button class="${BTN_SEC_SM}" data-action="editarProf" data-id="${p.id}">✏️</button>
+                <button class="${BTN_DNG_SM}" data-action="deletarProf" data-id="${p.id}">🗑️</button>
               </td>
             </tr>`).join('') :
             `<tr><td colspan="6">${emptyState('🏋️', 'Nenhum professor cadastrado')}</td></tr>`
@@ -42,8 +42,8 @@ async function renderProfessores(c) {
         <div class="${FG}"><label>Telefone</label><input id="p_tel" value="${p ? escape(p.telefone || '') : ''}"></div>
         <div class="${FG}"><label>Email</label><input id="p_email" type="email" value="${p ? escape(p.email || '') : ''}"></div>
       </div>`,
-            `<button class="${BTN_SEC}" onclick="closeModal()">Cancelar</button>
-       <button class="${BTN_PRI}" onclick="${p ? `submitting(this, () => salvarEditProf(${id}))` : 'submitting(this, salvarNovoProf)'}">Salvar</button>`
+            `<button class="${BTN_SEC}" data-action="closeModal">Cancelar</button>
+       <button class="${BTN_PRI}" data-action="${p ? 'submitEditProf' : 'submitNovoProf'}" data-id="${id || ''}">Salvar</button>`
         );
     };
 

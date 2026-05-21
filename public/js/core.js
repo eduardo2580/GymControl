@@ -6,6 +6,35 @@ let currentAdminTab = 'dashboard';
 let currentProfTab = 'treinos';
 let currentAlunoTab = 'meu-perfil';
 
+// ─── EVENT DELEGATION (CSP-friendly: zero inline handlers) ────────────────────
+// Cada handler é registrado em window.actions['nome']. No HTML:
+//   <button data-action="nome">...</button>
+// Args podem vir em data-args='["x", 123]' (JSON), ou em data-* específicos.
+// Dentro do handler, `this` é o elemento e o primeiro argumento é o Event.
+window.actions = {};
+
+function _dispatch(eventType) {
+    document.addEventListener(eventType, e => {
+        const el = e.target.closest('[data-action]');
+        if (!el) return;
+        // Forms só reagem a submit; demais elementos só reagem a click/input/change.
+        const isForm = el.tagName === 'FORM';
+        if (isForm && eventType !== 'submit') return;
+        if (!isForm && eventType === 'submit') return;
+        if (eventType === 'submit') e.preventDefault();
+        const fn = window.actions[el.dataset.action];
+        if (!fn) return;
+        let args = [];
+        if (el.dataset.args) {
+            try { args = JSON.parse(el.dataset.args); }
+            catch (_e) { /* ignora args malformados */ }
+        }
+        fn.call(el, e, ...args);
+    }, true);
+}
+
+['click', 'submit', 'input', 'change'].forEach(_dispatch);
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 async function apiFetch(url, opts = {}) {
     const r = await fetch(url, { credentials: 'same-origin', ...opts });
@@ -195,7 +224,7 @@ function openProfessorSelect(profs) {
     const opts = profs.map(p => `<option value="${p.id}">${escape(p.nome)}</option>`).join('');
     openModal('Selecione seu perfil',
         `<div class="flex flex-col gap-1.5"><label>Você é:</label><select id="profSelModal">${opts}</select></div>`,
-        `<button class="${BTN_PRI}" onclick="confirmProfLogin()">Entrar</button>`
+        `<button class="${BTN_PRI}" data-action="confirmProfLogin">Entrar</button>`
     );
 }
 
@@ -271,3 +300,90 @@ async function renderAdminTab(tab) {
 const FG = `flex flex-col gap-1.5`; // form-group
 const FG_FULL = `flex flex-col gap-1.5 col-span-full`; // form-group full
 const FGRID = `grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3.5`; // form-grid
+
+// ─── ACTIONS (todos os handlers data-action) ──────────────────────────────────
+// Cada chave aqui é referenciada via `data-action="key"` no HTML / templates.
+// `this` dentro do handler é o elemento que disparou o evento.
+const _num = el => Number(el.dataset.id);
+
+Object.assign(window.actions, {
+    // ── auth / nav ──
+    login:                  () => doLogin(),
+    logout:                 () => logout(),
+    selecionarAluno:        () => selecionarAluno(),
+    confirmProfLogin:       () => confirmProfLogin(),
+    navAdminTab: function () { navTo(this, this.dataset.tab);  closeMobileNav('adminNav'); },
+    navProfTab:  function () { navProf(this, this.dataset.ptab); closeMobileNav('profNav'); },
+    navAlunoTab: function () { navAluno(this, this.dataset.atab); closeMobileNav('alunoNav'); },
+    toggleMobileNav: (_e, id) => toggleMobileNav(id),
+    closeModal:             () => closeModal(),
+    closeModalOutside:      (e) => closeModalOutside(e),
+
+    // ── alunos ──
+    openModalCadastrarAluno: () => window.openModalCadastrarAluno(),
+    editarAluno:  function () { window.editarAluno(_num(this)); },
+    deletarAluno: function () { window.deletarAluno(_num(this)); },
+    filtrarAlunos: () => window.filtrarAlunos(),
+    submitNovoAluno: function () { submitting(this, window.salvarAluno); },
+    submitEditAluno: function () {
+        const id = _num(this);
+        submitting(this, () => window.atualizarAluno(id));
+    },
+    registrarPagamentoRapido: function () {
+        window.registrarPagamentoRapido(_num(this), Number(this.dataset.valor));
+    },
+
+    // ── professores ──
+    openModalProf: () => window.openModalProf(),
+    editarProf:  function () { window.editarProf(_num(this)); },
+    deletarProf: function () { window.deletarProf(_num(this)); },
+    submitNovoProf: function () { submitting(this, window.salvarNovoProf); },
+    submitEditProf: function () {
+        const id = _num(this);
+        submitting(this, () => window.salvarEditProf(id));
+    },
+
+    // ── planos ──
+    openModalPlano: () => window.openModalPlano(),
+    editarPlano:  function () { window.editarPlano(_num(this)); },
+    deletarPlano: function () { window.deletarPlano(_num(this)); },
+    submitNovoPlano: function () { submitting(this, window.salvarNovoPlano); },
+    submitEditPlano: function () {
+        const id = _num(this);
+        submitting(this, () => window.salvarEditPlano(id));
+    },
+
+    // ── pagamentos ──
+    openModalPag:     () => window.openModalPag(),
+    deletarPag:       function () { window.deletarPag(_num(this)); },
+    filtrarPag:       () => window.filtrarPag(),
+    autoPreencherValor: () => window.autoPreencherValor(),
+    submitPagamento:  function () { submitting(this, window.salvarPagamento); },
+
+    // ── treinos ──
+    openModalTreino: function () {
+        if (this.dataset.id) window.openModalTreino(_num(this));
+        else                 window.openModalTreino();
+    },
+    deletarTreino:  function () { window.deletarTreino(_num(this)); },
+    filtrarTreinos: () => window.filtrarTreinos(),
+    addExercicio:   () => window.addExercicio(),
+    removeExercicio: function () { window.removeExercicio(Number(this.dataset.i)); },
+    submitNovoTreino: function () { submitting(this, window.salvarNovoTreino); },
+    submitEditTreino: function () {
+        const id = _num(this);
+        submitting(this, () => window.salvarEditTreino(id));
+    },
+
+    // ── frequência ──
+    openModalFreq: () => window.openModalFreq(),
+    deletarFreq:   function () { window.deletarFreq(_num(this)); },
+    filtrarFreq:   () => window.filtrarFreq(),
+    submitFreq:    function () { submitting(this, window.salvarFreq); },
+
+    // ── backup ──
+    exportarBackup:   () => window.exportarBackup(),
+    importarBackup:   function () { window.importarBackup(this); },
+    confirmarRestore: () => window.confirmarRestore(),
+    clearBackupLog:   () => { document.getElementById('backupLog').innerHTML = ''; },
+});

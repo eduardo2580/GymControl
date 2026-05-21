@@ -12,21 +12,53 @@ const {
 const {
   setAuthCookie, clearAuthCookie, signToken, makeAuthenticate, requireAuth, requireRole,
 } = require('./lib/auth');
+const { sanitizeError } = require('./lib/log-sanitizer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+const IS_PROD = process.env.NODE_ENV === 'production';
 
-if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'dev-secret-change-me') {
+if (IS_PROD && JWT_SECRET === 'dev-secret-change-me') {
   console.error('FATAL: JWT_SECRET must be set in production');
   process.exit(1);
 }
 
 app.set('trust proxy', 1);
 app.use(helmet({
-  contentSecurityPolicy: false, // Tailwind CDN + inline styles in the existing HTML
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      'default-src':  ["'self'"],
+      'script-src':   ["'self'", 'https://cdn.tailwindcss.com'],
+      'style-src':    ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://fonts.googleapis.com'],
+      'font-src':     ["'self'", 'https://fonts.gstatic.com', 'data:'],
+      'img-src':      ["'self'", 'data:'],
+      'connect-src':  ["'self'"],
+      'frame-ancestors': ["'none'"],
+      'object-src':   ["'none'"],
+      'base-uri':     ["'self'"],
+    },
+  },
+  // TTL curto: projeto acadêmico temporário, sem garantia de durar mais que alguns meses.
+  hsts: IS_PROD ? { maxAge: 86400, includeSubDomains: false, preload: false } : false,
 }));
-app.use(cors({ origin: true, credentials: true }));
+
+// CORS allowlist via env var (comma-separated). Default: same-origin only (no CORS).
+// Em produção, defina CORS_ORIGINS=https://gymcontrol.vercel.app[,https://outra...]
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+app.use(cors({
+  origin: function (origin, cb) {
+    // requests same-origin não mandam Origin → libera.
+    if (!origin) return cb(null, true);
+    if (!CORS_ORIGINS.length) return cb(null, false); // CORS desligado por padrão
+    if (CORS_ORIGINS.includes(origin)) return cb(null, true);
+    return cb(null, false);
+  },
+  credentials: true,
+}));
+
 app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 
@@ -81,8 +113,8 @@ function todayISO() {
 function wrap(handler) {
   return (req, res) => handler(req, res).catch(e => {
     if (e && e.status) return res.status(e.status).json({ error: e.message });
-    console.error(e);
-    res.status(500).json({ error: e.message });
+    console.error(sanitizeError(e));
+    res.status(500).json({ error: 'Erro interno' });
   });
 }
 

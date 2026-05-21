@@ -21,12 +21,12 @@ async function renderProfTreinos(c) {
         <div class="font-bebas text-[1.8rem] tracking-[2px] text-[var(--text)]">Gerenciar Treinos</div>
         <div class="text-[var(--muted)] text-[0.82rem] mt-0.5">${meusTreinos.length} treinos cadastrados</div>
       </div>
-      <button class="${BTN_PRI}" onclick="openModalTreino()">＋ Novo Treino</button>
+      <button class="${BTN_PRI}" data-action="openModalTreino">＋ Novo Treino</button>
     </div>
     ${panelPlain(`
       <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
         <span class="font-semibold text-[0.9rem]">Treinos</span>
-        <select id="filtroAlunoTreino" onchange="filtrarTreinos()" style="margin:0;width:auto">
+        <select id="filtroAlunoTreino" data-action="filtrarTreinos" style="margin:0;width:auto">
           <option value="">Todos os alunos</option>
           ${ativos.map(a => `<option value="${a.id}">${escape(a.nome)}</option>`).join('')}
         </select>
@@ -63,7 +63,7 @@ async function renderProfTreinos(c) {
       <hr class="border-none border-t border-[var(--border)] my-5">
       <div class="flex justify-between items-center mb-2.5">
         <strong>Exercícios</strong>
-        <button class="${BTN_SEC_SM}" type="button" onclick="addExercicio()">＋ Exercício</button>
+        <button class="${BTN_SEC_SM}" type="button" data-action="addExercicio">＋ Exercício</button>
       </div>
       <div class="text-[0.75rem] text-[var(--muted)] mb-2 grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_auto] gap-2.5 px-3.5">
         <span>Nome</span><span>Grupo Muscular</span><span>Séries</span><span>Reps</span><span>Descanso(s)</span><span></span>
@@ -71,8 +71,8 @@ async function renderProfTreinos(c) {
       <div id="exerciciosList">
         ${exs.map((e, i) => exercicioRow(e, i)).join('')}
       </div>`,
-            `<button class="${BTN_SEC}" onclick="closeModal()">Cancelar</button>
-       <button class="${BTN_PRI}" onclick="${t ? `submitting(this, () => salvarEditTreino(${id}))` : 'submitting(this, salvarNovoTreino)'}">Salvar Treino</button>`
+            `<button class="${BTN_SEC}" data-action="closeModal">Cancelar</button>
+       <button class="${BTN_PRI}" data-action="${t ? 'submitEditTreino' : 'submitNovoTreino'}" data-id="${id || ''}">Salvar Treino</button>`
         );
         window._exIdx = exs.length;
     };
@@ -93,7 +93,7 @@ async function renderProfTreinos(c) {
       <input type="number" value="${e.series || 3}" min="1" data-ex-series="${i}" style="margin:0;padding:6px 10px;font-size:0.83rem">
       <input type="number" value="${e.repeticoes || 12}" min="1" data-ex-reps="${i}" style="margin:0;padding:6px 10px;font-size:0.83rem">
       <input type="number" value="${e.descanso || 60}" min="0" data-ex-desc="${i}" style="margin:0;padding:6px 10px;font-size:0.83rem">
-      <button class="${BTN_DNG_SM} px-2" type="button" onclick="removeExercicio(${i})">✕</button>
+      <button class="${BTN_DNG_SM} px-2" type="button" data-action="removeExercicio" data-i="${i}">✕</button>
     </div>`;
     }
 
@@ -159,8 +159,8 @@ function renderTreinosCards(treinos) {
             </div>
           </div>
           <div class="flex gap-1.5">
-            <button class="${BTN_SEC_SM}" onclick="openModalTreino(${t.id})">✏️</button>
-            <button class="${BTN_DNG_SM}" onclick="deletarTreino(${t.id})">🗑️</button>
+            <button class="${BTN_SEC_SM}" data-action="openModalTreino" data-id="${t.id}">✏️</button>
+            <button class="${BTN_DNG_SM}" data-action="deletarTreino" data-id="${t.id}">🗑️</button>
           </div>
         </div>
         ${t.observacoes ? `<p class="text-[0.82rem] text-[var(--muted)] mb-2">📝 ${escape(t.observacoes)}</p>` : ''}

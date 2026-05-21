@@ -9,12 +9,12 @@ async function renderAlunos(c) {
         <div class="font-bebas text-[1.8rem] tracking-[2px] text-[var(--text)]">Alunos</div>
         <div class="text-[var(--muted)] text-[0.82rem] mt-0.5">${alunos.length} cadastrados</div>
       </div>
-      <button class="${BTN_PRI}" onclick="openModalCadastrarAluno()">＋ Novo Aluno</button>
+      <button class="${BTN_PRI}" data-action="openModalCadastrarAluno">＋ Novo Aluno</button>
     </div>
     ${panelPlain(`
       <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
         <span class="font-semibold text-[0.9rem]">Lista de Alunos</span>
-        <input id="searchAluno" placeholder="🔍 Buscar..." oninput="filtrarAlunos()"
+        <input id="searchAluno" placeholder="🔍 Buscar..." data-action="filtrarAlunos"
                class="max-w-[200px]" style="margin:0">
       </div>
       <div class="overflow-x-auto">
@@ -37,8 +37,8 @@ async function renderAlunos(c) {
         <div class="${FG}"><label>Plano *</label><select id="m_plano">${planoOpts}</select></div>
         <div class="${FG_FULL}"><label>Observações</label><textarea id="m_obs" placeholder="Notas opcionais"></textarea></div>
       </div>`,
-            `<button class="${BTN_SEC}" onclick="closeModal()">Cancelar</button>
-       <button class="${BTN_PRI}" onclick="submitting(this, salvarAluno)">Cadastrar</button>`
+            `<button class="${BTN_SEC}" data-action="closeModal">Cancelar</button>
+       <button class="${BTN_PRI}" data-action="submitNovoAluno">Cadastrar</button>`
         );
         maskCpfInput(document.getElementById('m_cpf'));
         maskPhoneInput(document.getElementById('m_tel'));
@@ -57,8 +57,8 @@ async function renderAlunos(c) {
         <div class="${FG}"><label>Status</label><select id="e_status"><option ${a.status === 'Ativo' ? 'selected' : ''}>Ativo</option><option ${a.status === 'Inativo' ? 'selected' : ''}>Inativo</option></select></div>
         <div class="${FG_FULL}"><label>Observações</label><textarea id="e_obs">${escape(a.observacoes || '')}</textarea></div>
       </div>`,
-            `<button class="${BTN_SEC}" onclick="closeModal()">Cancelar</button>
-       <button class="${BTN_PRI}" onclick="submitting(this, () => atualizarAluno(${id}))">Salvar</button>`
+            `<button class="${BTN_SEC}" data-action="closeModal">Cancelar</button>
+       <button class="${BTN_PRI}" data-action="submitEditAluno" data-id="${id}">Salvar</button>`
         );
         maskCpfInput(document.getElementById('e_cpf'));
         maskPhoneInput(document.getElementById('e_tel'));
@@ -118,8 +118,8 @@ function alunosRows(alunos) {
       <td>${badge(a.status, a.status === 'Ativo' ? 'green' : 'gray')}</td>
       <td>${a.status === 'Ativo' ? badge(a.inadimplente ? 'Inadimplente' : 'Em dia', a.inadimplente ? 'red' : 'green') : '—'}</td>
       <td class="flex gap-1.5">
-        <button class="${BTN_SEC_SM}" onclick="editarAluno(${a.id})">✏️</button>
-        <button class="${BTN_DNG_SM}" onclick="deletarAluno(${a.id})">🗑️</button>
+        <button class="${BTN_SEC_SM}" data-action="editarAluno" data-id="${a.id}">✏️</button>
+        <button class="${BTN_DNG_SM}" data-action="deletarAluno" data-id="${a.id}">🗑️</button>
       </td>
     </tr>`).join('');
 }

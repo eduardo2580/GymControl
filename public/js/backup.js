@@ -10,7 +10,7 @@ async function renderBackup(c) {
         <div class="text-4xl mb-3">📦</div>
         <h3 class="text-base font-semibold mb-1.5">Exportar Backup</h3>
         <p class="text-[0.82rem] text-[var(--muted)] mb-4">Baixar todos os dados do sistema em formato JSON. Use para criar backups manuais ou migrar dados.</p>
-        <button class="${BTN_PRI}" onclick="exportarBackup()">⬇️ Baixar Backup JSON</button>
+        <button class="${BTN_PRI}" data-action="exportarBackup">⬇️ Baixar Backup JSON</button>
       </div>
       <div class="bg-[var(--surface2)] border border-[var(--border)] rounded-xl p-6 text-center">
         <div class="text-4xl mb-3">🔄</div>
@@ -18,7 +18,7 @@ async function renderBackup(c) {
         <p class="text-[0.82rem] text-[var(--muted)] mb-4">Importar um arquivo JSON de backup para restaurar os dados. <strong>Atenção: isso substituirá todos os dados atuais!</strong></p>
         <label class="${BTN_SEC} cursor-pointer">
           📂 Selecionar arquivo JSON
-          <input type="file" accept=".json" class="hidden" onchange="importarBackup(this)">
+          <input type="file" accept=".json" class="hidden" data-action="importarBackup">
         </label>
       </div>
     </div>
@@ -50,8 +50,8 @@ async function renderBackup(c) {
             <p>Pagamentos: ${json.pagamentos?.length || 0} | Treinos: ${json.treinos?.length || 0} | Frequências: ${json.frequencias?.length || 0}</p>
             <hr class="border-none border-t border-[var(--border)] my-5">
             <p class="text-[var(--red)] mb-3.5">⚠️ Esta ação substituirá <strong>todos</strong> os dados atuais!</p>
-            <button class="${BTN_DNG_SM.replace('btn-sm', '')}" onclick="confirmarRestore()">🔄 Confirmar Restauração</button>
-            <button class="${BTN_SEC}" style="margin-left:8px" onclick="document.getElementById('backupLog').innerHTML=''">Cancelar</button>
+            <button class="${BTN_DNG_SM.replace('btn-sm', '')}" data-action="confirmarRestore">🔄 Confirmar Restauração</button>
+            <button class="${BTN_SEC}" style="margin-left:8px" data-action="clearBackupLog">Cancelar</button>
           </div>`);
             window._pendingRestore = json;
         } catch (e) {
