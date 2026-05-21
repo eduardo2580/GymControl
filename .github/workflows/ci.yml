@@ -8,6 +8,29 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: gymcontrol
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: gymcontrol
+      JWT_SECRET: ci-test-secret
+
     steps:
       - uses: actions/checkout@v4
 
@@ -19,25 +42,21 @@ jobs:
       - run: npm ci
 
       - name: Lint
-        run: npm run lint --if-present
+        run: npm run lint
 
-      - name: Test
-        run: npm test --if-present
-
-      - name: Validate SQL schema (MySQL)
-        uses: mirromutth/mysql-action@v1.1
-        with:
-          mysql version: '8.0'
-          mysql root password: root
-          mysql database: gymcontrol
-
-      - name: Wait for MySQL and load schema
+      - name: Wait for MySQL and load schema + seed
         run: |
           for i in $(seq 1 30); do
             mysqladmin ping -h127.0.0.1 -uroot -proot --silent && break
             sleep 2
           done
-          mysql -h127.0.0.1 -uroot -proot gymcontrol < sql/01_schema.sql
-          mysql -h127.0.0.1 -uroot -proot gymcontrol < sql/02_seed.sql
-          mysql -h127.0.0.1 -uroot -proot --force gymcontrol < sql/04_tests.sql | tee test_output.txt
-          ! grep -q "FAIL" test_output.txt
+          mysql -h127.0.0.1 -uroot -proot --default-character-set=utf8mb4 < sql/01_schema.sql
+          mysql -h127.0.0.1 -uroot -proot --default-character-set=utf8mb4 gymcontrol < sql/02_seed.sql
+
+      - name: SQL constraint tests
+        run: |
+          mysql -h127.0.0.1 -uroot -proot --default-character-set=utf8mb4 --force gymcontrol < sql/04_tests.sql | tee sql_test_output.txt
+          ! grep -q "FAIL" sql_test_output.txt
+
+      - name: Jest API tests
+        run: npm test

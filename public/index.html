@@ -18,37 +18,29 @@
             <div class="font-bebas text-6xl tracking-widest text-[var(--accent)] mb-1">GYM<span class="text-[var(--text)]">CONTROL</span>
             </div>
             <p class="text-[var(--muted)] mb-9 text-xs uppercase tracking-widest">Sistema de Gerenciamento de Academia</p>
-            <div class="flex flex-col gap-3 mb-6">
-                <button
-                    class="flex items-center gap-3.5 px-5 py-4 rounded-xl border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] font-semibold text-base cursor-pointer transition-all hover:border-[var(--accent)] hover:translate-x-1"
-                    onclick="login('admin')">
-                    <span class="text-2xl">👨‍💼</span>
-                    <span class="flex flex-col text-left">
-                        <span>Administrador</span>
-                        <span class="text-xs font-normal text-[var(--muted)] mt-0.5">Gestão completa — alunos, finanças,
-                            relatórios</span>
-                    </span>
+            <form id="loginForm" class="flex flex-col gap-3 mb-4 text-left" onsubmit="event.preventDefault(); doLogin();">
+                <label class="text-xs uppercase tracking-widest text-[var(--muted)]">Email
+                    <input id="loginEmail" type="email" autocomplete="username" required
+                        class="mt-1 w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] focus:outline-none focus:border-[var(--accent)]" />
+                </label>
+                <label class="text-xs uppercase tracking-widest text-[var(--muted)]">Senha
+                    <input id="loginSenha" type="password" autocomplete="current-password" required
+                        class="mt-1 w-full px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] focus:outline-none focus:border-[var(--accent)]" />
+                </label>
+                <button type="submit"
+                    class="mt-2 px-5 py-3 rounded-xl border border-[var(--border)] bg-[var(--accent)] text-[#0d0f14] font-semibold cursor-pointer hover:-translate-y-px transition-transform">
+                    Entrar
                 </button>
-                <button
-                    class="flex items-center gap-3.5 px-5 py-4 rounded-xl border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] font-semibold text-base cursor-pointer transition-all hover:border-[var(--accent)] hover:translate-x-1"
-                    onclick="login('professor')">
-                    <span class="text-2xl">🏋️</span>
-                    <span class="flex flex-col text-left">
-                        <span>Professor</span>
-                        <span class="text-xs font-normal text-[var(--muted)] mt-0.5">Gerenciar treinos e acompanhar alunos</span>
-                    </span>
-                </button>
-                <button
-                    class="flex items-center gap-3.5 px-5 py-4 rounded-xl border border-[var(--border)] bg-[var(--surface2)] text-[var(--text)] font-semibold text-base cursor-pointer transition-all hover:border-[var(--accent)] hover:translate-x-1"
-                    onclick="login('aluno')">
-                    <span class="text-2xl">🏅</span>
-                    <span class="flex flex-col text-left">
-                        <span>Aluno</span>
-                        <span class="text-xs font-normal text-[var(--muted)] mt-0.5">Consultar treinos, pagamentos e
-                            frequência</span>
-                    </span>
-                </button>
-            </div>
+                <div id="loginErr" class="text-xs text-[var(--red)] min-h-[1em]"></div>
+            </form>
+            <details class="text-left text-xs text-[var(--muted)]">
+                <summary class="cursor-pointer">Contas demo</summary>
+                <div class="mt-2 leading-relaxed">
+                    <code>admin@gym.com</code> / <code>admin123</code><br>
+                    <code>ana@gym.com</code> / <code>prof123</code><br>
+                    <code>joao@aluno.com</code> / <code>aluno123</code>
+                </div>
+            </details>
         </div>
     </div>
 
@@ -313,7 +305,17 @@
         }
     </style>
 
-    <script src="/app.js"></script>
+    <script src="/js/core.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/alunos.js"></script>
+    <script src="/js/professores.js"></script>
+    <script src="/js/planos.js"></script>
+    <script src="/js/pagamentos.js"></script>
+    <script src="/js/inadimplentes.js"></script>
+    <script src="/js/frequencia.js"></script>
+    <script src="/js/backup.js"></script>
+    <script src="/js/professor.js"></script>
+    <script src="/js/aluno.js"></script>
 </body>
 
 </html>

@@ -19,10 +19,11 @@ INSERT INTO alunos (nome, cpf, telefone, data_nascimento, status, plano_id, data
   ('Carlos Souza',   '333.333.333-33', '(11) 93333-3333', '1995-12-15', 'Inativo', 1, '2025-12-01');
 
 -- Usuarios (senha_hash é placeholder; integração de auth virá depois)
+-- Senhas de DEMO (bcrypt, cost=10): admin123 / prof123 / aluno123
 INSERT INTO usuarios (nome, email, senha_hash, tipo_usuario, aluno_id, professor_id) VALUES
-  ('Administrador', 'admin@gym.com',   'PLACEHOLDER_HASH', 'Admin',     NULL, NULL),
-  ('Ana Costa',     'ana@gym.com',     'PLACEHOLDER_HASH', 'Professor', NULL, 1),
-  ('João Silva',    'joao@aluno.com',  'PLACEHOLDER_HASH', 'Aluno',     1,    NULL);
+  ('Administrador', 'admin@gym.com',  '$2b$10$8DgQzrxhA5t0lfJc4BMGOO99.OX.qzeNGUt1SwcIOEfhAAXixbD0q', 'Admin',     NULL, NULL),
+  ('Ana Costa',     'ana@gym.com',    '$2b$10$pTI.ZPGN172BjAJZLTEhn.A6/NyROP91r1xLfpdmPZx56xoBDaQFK', 'Professor', NULL, 1),
+  ('João Silva',    'joao@aluno.com', '$2b$10$PeiwA6TvzulW8QCPhp1Mpu2aubpbZgUpM5ZvM9vynQNOHOAm1QjNe', 'Aluno',     1,    NULL);
 
 -- Pagamentos
 INSERT INTO pagamentos (aluno_id, data_pagamento, data_vencimento, valor, status, referencia_mensal, metodo_pagamento) VALUES
