@@ -56,7 +56,7 @@ module.exports = [
       globals: nodeGlobals,
     },
     rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
       'no-undef': 'error',
       'no-console': 'off',
       semi: ['error', 'always'],
@@ -70,7 +70,7 @@ module.exports = [
       globals: { ...nodeGlobals, ...jestGlobals },
     },
     rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
       'no-undef': 'error',
       semi: ['error', 'always'],
     },

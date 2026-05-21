@@ -1,95 +1,134 @@
 # Preparando o deploy na AWS
 
-**Status:** 🚧 em andamento
+**Status:** ✅ código pronto · 🔴 esperando você rodar `terraform apply`
 
-Documento de planejamento e checklist do endurecimento de segurança feito **antes** de subir o sistema na AWS. O alvo é manter o frontend na Vercel (estático) e o backend + banco na AWS, com o sistema acessível publicamente, mesmo que sem uso real (showcase acadêmico).
+Frontend já no ar (Vercel). Falta subir o backend + banco na AWS. Todo o trabalho de código e IaC necessário está commitado neste branch — basta rodar o Terraform quando estiver com a conta AWS configurada.
 
-## Arquitetura alvo
+## Arquitetura
 
 ```
-   Browser  ──HTTPS──►  Vercel (estático, public/)
-                            │
-                            └─ chama /api/* (rewrite)
-                                       │
-                                       ▼
-                            AWS App Runner (Node + Express)
-                                       │
-                                       ▼
-                            AWS RDS MySQL 8 (VPC privada)
+  Browser ─HTTPS─► Vercel (estático, public/)
+                       │
+                       └ /api/*  ─rewrite─► AWS App Runner (Node + Express)
+                                                  │ VPC connector
+                                                  ▼
+                                            RDS MySQL 8 (VPC privada)
 ```
 
-- **Vercel** (frontend já no ar em <https://gym-control-pearl.vercel.app>): deploy automático via GitHub. Configurado em [`vercel.json`](../../../vercel.json).
-- **AWS App Runner**: serviço gerenciado, escala automaticamente, fácil de configurar via console.
-- **RDS MySQL 8** (instance `db.t4g.micro`, free tier 12 meses).
-- **VPC connector** entre App Runner e RDS — banco **sem** `publicly_accessible`.
+- **Vercel** (frontend, já no ar): <https://gym-control-pearl.vercel.app> · [`vercel.json`](../../../vercel.json)
+- **App Runner** com VPC connector, imagem do ECR, secrets do Secrets Manager
+- **RDS MySQL 8** `db.t4g.micro` privado, criptografado, backup retention de 1 dia
+- **Secrets Manager** guarda `JWT_SECRET` e a senha master do DB (ambos gerados pelo Terraform)
+- **ECR** hospeda a imagem Docker
 
-## Por que endurecer antes de subir
+## Decisões aplicadas
 
-O `RNF07` ("proteger informações básicas dos usuários") foi cumprido com o suficiente para o trabalho da disciplina, mas expor o sistema na internet pública amplia o vetor de ataque. Antes do deploy reforçamos:
+| Decisão | Escolha | Por quê |
+|---|---|---|
+| IaC | Terraform | Reproduz + destrói com um comando; portável; o usuário tem familiaridade |
+| Auth | Cookie httpOnly (mantido) | Diretiva "sempre o mais seguro"; XSS-resistente. Custo: precisa de domínio compartilhado entre Vercel e AWS para funcionar entre origens |
+| TTL HSTS | 1 dia (mínimo) | Projeto temporário (~2 meses); preload de 1 ano não se justifica |
+| Backup RDS | 1 dia | Mínimo permitido pelo RDS; descartável |
+| App Runner egress | VPC only (sem NAT) | Backend só fala com RDS, não precisa de internet → corta custo do NAT Gateway |
+| DB user | `dbadmin` (master) | Para o auto-migrate funcionar, precisa de DDL. O `sql/05_app_user.sql` fica documentado para uma evolução futura (separar credenciais runtime ↔ admin) |
 
-| # | Item | Tipo | Status |
-|---|---|---|---|
-| 1 | Usuário MySQL dedicado (não `root`) com privilégio mínimo | Script SQL | 🟡 |
-| 2 | `JWT_SECRET` em AWS Secrets Manager (ou Parameter Store) | Infra | 🔴 |
-| 3 | HTTPS obrigatório com termination correta (App Runner já dá) | Infra | 🔴 |
-| 4 | CORS restrito por allowlist via env var | Código | 🟡 |
-| 5 | CSP (`Content-Security-Policy`) explícita no helmet | Código | 🟡 |
-| 6 | Logs sem PII (CPF, email, hash, token) | Código | 🟡 |
-| 7 | RDS em VPC privada | Infra | 🔴 |
-| 8 | Backup automático do RDS — TTL mínimo (1 dia), já que é projeto temporário | Infra | 🔴 |
-| 9 | HSTS habilitado em produção, TTL mínimo (não é projeto duradouro pra justificar preload de 1 ano) | Código | 🟡 |
-| 10 | Cookie cross-subdomain (api.x.com ↔ x.com) ou Bearer token | Código | 🔴 |
+## Checklist completo
 
-Status: 🟢 feito · 🟡 em código (pendente confirmar) · 🔴 só quando subir a infra
+### ✅ Código (já no repo)
 
-## Decisões em aberto
+- [x] `lib/auth.js` — JWT em cookie httpOnly + SameSite=Strict
+- [x] `lib/validators.js` — CPF format + check digit + `requireFields`
+- [x] `lib/log-sanitizer.js` — remove CPF, email, hash, token antes do `console.error`
+- [x] `lib/migrate.js` — auto-aplica schema+seed se `usuarios` não existir e `AUTO_MIGRATE=1`
+- [x] Helmet com CSP estrita, HSTS habilitado em prod com TTL mínimo
+- [x] CORS allowlist via `CORS_ORIGINS`
+- [x] Rate limit (120/min na API, 5/min no `/api/auth/login`)
+- [x] Guard de `JWT_SECRET` em produção (servidor recusa subir com o default)
+- [x] Endpoint público `/healthz` para o health check do App Runner
+- [x] Frontend sem nenhum handler inline (event delegation via `data-action`)
+- [x] 117 testes (lint + Jest + Playwright) verdes
 
-### Cookie ou Bearer token?
-O cookie `httpOnly` + `SameSite=Strict` funciona bem same-origin. No deploy split (Vercel + AWS), só funciona se ambos compartilharem domínio raiz:
+### ✅ Build e empacotamento
 
-- ✅ **Plano A — domínio comum**: `gymcontrol.com` (Vercel) + `api.gymcontrol.com` (App Runner). Cookie com `Domain=.gymcontrol.com`. Mantém XSS-resistência.
-- ⚠️ **Plano B — sem domínio próprio**: trocar para `Authorization: Bearer <token>` em localStorage. Mais simples no deploy, mas perde resistência a XSS.
+- [x] [`Dockerfile`](../../../Dockerfile) multi-stage, usuário não-root, `tini`, `HEALTHCHECK` apontando para `/healthz`
+- [x] [`.dockerignore`](../../../.dockerignore) — não copia `tests/`, `docs/`, `infra/`, `node_modules`, `.env*`, etc.
 
-Para um showcase universitário sem uso real, Plano B é defensável. Decisão será tomada quando soubermos se vamos comprar/usar um domínio.
+### ✅ Infra como código
 
-### Onde os segredos vivem?
-Em produção, **nunca** colocar `JWT_SECRET` ou `DB_PASSWORD` em `App Runner Configuration > Environment Variables` em texto. Usar:
-- **AWS Secrets Manager** (ideal) ou
-- **AWS Systems Manager Parameter Store** com SecureString (mais barato).
+Em [`infra/terraform/`](../../../infra/terraform/):
 
-App Runner consegue ler ambos via service role.
+- [x] VPC com 2 subnets privadas (sem IGW, sem NAT)
+- [x] Security groups: App Runner ↔ RDS na 3306
+- [x] RDS MySQL 8 privado, criptografado, parameter group utf8mb4
+- [x] Secrets Manager para `DB_PASSWORD` e `JWT_SECRET` (ambos via `random_password`)
+- [x] ECR com lifecycle policy (5 imagens)
+- [x] App Runner com:
+  - VPC connector → enxerga o RDS
+  - Imagem do ECR + secrets injetados
+  - Health check em `/healthz`
+  - IAM roles separadas para `access` (puxar ECR) e `instance` (ler Secrets Manager)
 
-## Checklist de ações de código (feitas neste branch)
+### 🔴 Pendente — precisa de uma conta AWS
 
-- [x] [`sql/05_app_user.sql`](../../../sql/05_app_user.sql) — script para criar o usuário `gymcontrol_app` com `SELECT/INSERT/UPDATE/DELETE` apenas (sem DDL).
-- [x] CORS env-driven em [`server.js`](../../../server.js) — `CORS_ORIGINS=https://x.com,https://y.com`.
-- [x] Helmet com CSP explícita liberando apenas o necessário (Tailwind CDN).
-- [x] HSTS com TTL de 1 ano + `includeSubDomains` em produção.
-- [x] `sanitizeError()` em [`lib/log-sanitizer.js`](../../../lib/log-sanitizer.js) — remove `senha`, `senha_hash`, `cpf`, `email`, `token` antes do `console.error`.
+Veja o runbook abaixo.
 
-## Checklist de ações de infra (não feitas — esperam o deploy real)
+## Runbook de deploy
 
-- [ ] Criar RDS MySQL t4g.micro em VPC privada, security group restritivo.
-- [ ] Rodar `sql/01_schema.sql` + `sql/02_seed.sql` + `sql/05_app_user.sql` no RDS via bastion temporário (ou Query Editor do RDS).
-- [ ] Criar JWT_SECRET aleatório (32+ bytes), salvar em Secrets Manager.
-- [ ] Criar service no App Runner conectado ao RDS via VPC connector, lendo secrets do Secrets Manager.
-- [ ] Configurar `CORS_ORIGINS` no App Runner com o domínio do Vercel.
-- [ ] Adicionar `rewrites` ao `vercel.json` apontando `/api/*` para o App Runner.
-- [ ] Decidir cookie vs Bearer (ver acima).
-- [ ] Testar smoke no ar.
+> Pré-requisitos: AWS CLI configurado (`aws configure`), Terraform ≥ 1.6, Docker rodando.
+
+```bash
+# 1. Provisiona toda a infra (RDS demora ~5-10 min)
+cd infra/terraform
+terraform init
+terraform apply
+# Anote os outputs: ecr_repository_url, apprunner_url, db_endpoint
+
+# 2. Build da imagem e push pro ECR + deploy no App Runner
+cd ../..
+scripts/aws-deploy.sh latest
+# Acompanhe em https://console.aws.amazon.com/apprunner/
+
+# 3. Smoke test
+curl https://<apprunner_url>/healthz
+# Espere ver { "ok": true }
+
+# 4. Configure o rewrite no Vercel
+# Edite vercel.json adicionando:
+#   "rewrites": [
+#     { "source": "/api/(.*)", "destination": "https://<apprunner_url>/api/$1" }
+#   ]
+# Commit + push. O Vercel re-deploy automaticamente.
+
+# 5. (Opcional, fora do escopo deste showcase) Domínio próprio
+# Pra manter o cookie httpOnly funcionando entre origens, configure
+# um domínio comum:
+#   - DNS root → Vercel (frontend)
+#   - DNS api → App Runner (backend)
+# Atualize CORS_ORIGINS no Terraform e vercel.json.
+```
 
 ## Plano de rollback
 
-Em caso de problema no ar:
-- Vercel: voltar deploy anterior (1 clique).
-- App Runner: voltar tag da imagem (1 clique).
-- RDS: backup automático restaura.
+- **Vercel**: aba "Deployments" → "Promote" no deploy anterior (1 clique).
+- **App Runner**: `aws apprunner start-deployment` apontando para uma tag antiga do ECR.
+- **RDS**: `aws rds restore-db-instance-from-db-snapshot` usando o snapshot automático (retenção = 1 dia).
 
-## Custo estimado (12 meses)
+## Tear down (fim do semestre)
 
-- **Vercel hobby**: $0 (hobby tier).
-- **App Runner**: ~$5/mês idle (0.25 vCPU, 0.5 GB).
-- **RDS t4g.micro**: $0 nos primeiros 12 meses (free tier), depois ~$13/mês.
-- **Secrets Manager**: $0.40/segredo/mês.
+```bash
+cd infra/terraform
+terraform destroy
+```
 
-Total nos primeiros 12 meses: ~$5,40/mês. Compatível com um projeto de demonstração temporário.
+Tudo (RDS, secrets, ECR, App Runner, VPC) some — `recovery_window_in_days = 0`, `force_delete = true`, `skip_final_snapshot = true`. Confira no console AWS depois pra garantir.
+
+## Custos
+
+| Item | Mensal |
+|---|---|
+| Vercel hobby | $0 |
+| RDS t4g.micro | $0 (free-tier 12m), depois ~$13 |
+| App Runner (0.25 vCPU, 0.5 GB) | ~$7-10 com pouco tráfego |
+| Secrets Manager (2 segredos) | ~$0.80 |
+| ECR (5 imagens) | < $0.50 |
+| **Total nos 2 primeiros meses** | **~$16-22** |

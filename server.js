@@ -62,6 +62,17 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 
+// Health endpoint público (sem auth, sem rate-limit) — usado pelo App Runner
+// e qualquer monitoramento externo. Faz um SELECT 1 para validar a conexão com o DB.
+app.get('/healthz', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ ok: true });
+  } catch (_e) {
+    res.status(503).json({ ok: false });
+  }
+});
+
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 120,
@@ -616,13 +627,34 @@ app.get('/api/health', wrap(async (_req, res) => {
 // ─── START ───────────────────────────────────────────────────────────────────
 module.exports = { app, pool };
 
-if (require.main === module) {
-  pool.query('SELECT 1')
-    .then(() => app.listen(PORT, () => {
-      console.log(`\n🏋️  GymControl running at http://localhost:${PORT}\n`);
-    }))
-    .catch(err => {
-      console.error('Failed to connect to MySQL:', err.message);
+async function start() {
+  // Auto-migração no primeiro boot (usado pelo App Runner contra um RDS vazio).
+  // NÃO roda em dev local nem em testes (sem AUTO_MIGRATE=1).
+  if (process.env.AUTO_MIGRATE === '1') {
+    const { runMigrationIfNeeded } = require('./lib/migrate');
+    try {
+      const r = await runMigrationIfNeeded({
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+      });
+      console.log(`[migrate] ${r.reason}`);
+    } catch (e) {
+      console.error('[migrate] falhou:', e.message);
       process.exit(1);
-    });
+    }
+  }
+  await pool.query('SELECT 1');
+  app.listen(PORT, () => {
+    console.log(`\n🏋️  GymControl running at http://localhost:${PORT}\n`);
+  });
+}
+
+if (require.main === module) {
+  start().catch(err => {
+    console.error('Falha ao subir:', err.message);
+    process.exit(1);
+  });
 }
