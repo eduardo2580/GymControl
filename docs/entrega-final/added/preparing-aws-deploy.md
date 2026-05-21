@@ -122,6 +122,100 @@ terraform destroy
 
 Tudo (RDS, secrets, ECR, App Runner, VPC) some — `recovery_window_in_days = 0`, `force_delete = true`, `skip_final_snapshot = true`. Confira no console AWS depois pra garantir.
 
+## Modelo de ameaça (blast radius)
+
+Antes de subir, é honesto explicitar o que esse sistema realmente expõe:
+
+- **Sem PII real**: nenhum dado pessoal verdadeiro existe. Os "alunos", "professores", "pagamentos" do seed são fictícios.
+- **Sem integrações externas**: o backend não fala com nenhum serviço externo (não tem gateway de pagamento, e-mail, SMS, etc.).
+- **Credenciais de demo são públicas**: documentadas no README. Qualquer pessoa pode logar como Admin, Professor ou Aluno.
+
+### O que um atacante consegue fazer
+
+| Acesso | Pode fazer | Dano |
+|---|---|---|
+| Sem login | Olhar telas estáticas (login) | Nenhum |
+| Admin (demo) | Criar/editar/deletar tudo, fazer backup/restore, ver relatórios | Cosmético — `terraform apply` recria do zero |
+| Professor (demo) | Criar/editar/deletar treinos, ler alunos | Sujar dados de demonstração |
+| Aluno (demo) | Ler perfil, treinos, pagamentos, frequência | Nenhum (somente leitura) |
+
+### O que um atacante **não** consegue fazer
+
+- **Roubar PII real** — não existe.
+- **Exfiltrar segredos** — `JWT_SECRET` e senha do DB vivem em Secrets Manager, nunca tocam logs (log-sanitizer scrubba CPFs/emails/hashes).
+- **Pivotear para outros serviços** — App Runner roda em VPC sem egresso para internet (sem NAT).
+- **Roubar o cookie via XSS** — `HttpOnly` + `__Secure-` + `SameSite=Strict` + CSP estrita com `'unsafe-inline'` proibido em `script-src`.
+- **CSRF** — `SameSite=Strict` + CORS allowlist.
+- **SQL injection** — todas as queries usam binds parametrizados via `mysql2`.
+- **Brute-force das credenciais** — rate-limit de 5 logins/min/IP. Como as senhas são públicas, isso protege contra robôs varrendo, não contra alguém usando o login de demo de propósito.
+- **DoS estourar a conta AWS** — App Runner travado em 1 instância (`max_size=1`), `max_concurrency=25`. Tráfego acima disso vira fila, não vira instância nova.
+
+### Camadas de defesa em profundidade
+
+| Camada | Proteção |
+|---|---|
+| Frontend (Vercel) | Headers de segurança no `vercel.json` (X-Frame-Options DENY, nosniff, no-referrer) |
+| Browser | CSP estrita, HSTS, cookies httpOnly + Secure + SameSite=Strict, sem inline handlers |
+| App (Express) | helmet, rate-limit, validação CPF + requireFields, log-sanitizer, audit log de login |
+| Rede | App Runner em frente de App Runner (TLS), RDS em VPC privada sem `publicly_accessible` |
+| Identidade AWS | IAM roles separadas (build vs. instance), OIDC no CI/CD (sem AWS keys longas) |
+| Segredos | Secrets Manager (não em env vars de texto) |
+| Observabilidade | Audit log de login (sucesso e falha) com email mascarado; CloudWatch com retenção de 7 dias |
+| Supply chain | `npm audit` (alta+) e Trivy (HIGH/CRITICAL) falham o CI/CD |
+| Código | CodeQL semanal + em PRs |
+
+## CI / CD
+
+### CI ([`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml))
+
+Em todo push/PR para `main`:
+
+1. `npm ci`
+2. `npm audit --omit=dev --audit-level=high` — falha se dep de prod tem CVE alta+
+3. `npm run lint`
+4. Sobe MySQL como service, carrega schema+seed
+5. Roda os testes SQL de constraint (`sql/04_tests.sql`)
+6. `npm test` — 106 testes Jest (unit + API via Supertest)
+7. `npm run test:e2e` — 16 testes Playwright contra Chromium real
+8. `docker build` da imagem de produção
+9. Trivy scan da imagem (HIGH/CRITICAL falha)
+
+### CodeQL ([`.github/workflows/codeql.yml`](../../../.github/workflows/codeql.yml))
+
+Análise semântica de código (JavaScript/TypeScript) — gratuita para repos públicos no GitHub. Roda em push, PR e uma vez por semana via cron, com query suite `security-and-quality`.
+
+### CD ([`.github/workflows/cd.yml`](../../../.github/workflows/cd.yml))
+
+Em push para `main`, **se** `vars.ENABLE_CD == 'true'`:
+
+1. Assume role AWS via **OIDC** (sem access keys em segredo) — `secrets.AWS_DEPLOY_ROLE_ARN`
+2. `docker build` + tag com `${github.sha}` e `latest`
+3. Trivy gate (HIGH/CRITICAL falha)
+4. `docker push` pro ECR
+5. `aws apprunner start-deployment`
+6. Espera o serviço voltar a `RUNNING` (timeout 10 min)
+7. `curl /healthz` no endpoint real como smoke final
+
+### Setup do CD (uma vez na AWS + uma vez no GitHub)
+
+```bash
+# Na AWS (manual, uma vez):
+# 1. Criar OIDC provider apontando pra token.actions.githubusercontent.com
+#    com thumbprint padrão.
+# 2. Criar IAM role com trust policy restrita ao repo:
+#    "token.actions.githubusercontent.com:sub": "repo:DyeAllPies/GymControl:ref:refs/heads/main"
+# 3. Anexar policy mínima com ecr:* (no ECR repo) e apprunner:StartDeployment,
+#    ListServices, DescribeService.
+# 4. Anotar o ARN do role.
+
+# No GitHub (uma vez):
+# Settings > Secrets and variables > Actions:
+#   - secret AWS_DEPLOY_ROLE_ARN = arn:aws:iam::ACCOUNT:role/...
+#   - variable ENABLE_CD = true
+```
+
+Sem essas duas chaves, o job de CD pula silenciosamente — o repo continua publicável e o CI roda normal.
+
 ## Custos
 
 | Item | Mensal |

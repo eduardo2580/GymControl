@@ -25,6 +25,18 @@ if (IS_PROD && JWT_SECRET === 'dev-secret-change-me') {
 }
 
 app.set('trust proxy', 1);
+
+// Force HTTPS em produção (defense-in-depth — App Runner termina TLS, mas o
+// X-Forwarded-Proto pode contar uma verdade diferente em casos de configuração ruim).
+if (IS_PROD) {
+  app.use((req, res, next) => {
+    // Permite o health check do load balancer mesmo se o cabeçalho ainda não veio com https
+    if (req.path === '/healthz') return next();
+    if (req.secure || req.headers['x-forwarded-proto'] === 'https') return next();
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  });
+}
+
 app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: true,
@@ -151,24 +163,48 @@ app.use(express.static('public'));
 app.use('/api/auth/login', loginLimiter);
 app.use('/api', apiLimiter);
 
+// Log de auditoria com email mascarado (a@b.com → a***@b.com) e IP do request,
+// para que tentativas de login sejam observáveis sem expor PII inteira.
+function maskEmail(s) {
+  if (!s) return '';
+  const [user, domain] = String(s).split('@');
+  if (!domain) return '***';
+  return `${user[0] || ''}***@${domain}`;
+}
+function auditLog(event, req, extra = {}) {
+  console.log(JSON.stringify({
+    ts: new Date().toISOString(),
+    event,
+    ip: req.ip,
+    ua: req.headers['user-agent'] || '-',
+    ...extra,
+  }));
+}
+
 app.post('/api/auth/login', wrap(async (req, res) => {
   const { email, senha } = req.body;
-  if (!email || !senha) return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+  if (!email || !senha) {
+    auditLog('auth.login.fail', req, { reason: 'missing_fields', email: maskEmail(email) });
+    return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+  }
   const u = await qOne(
     `SELECT id, nome, email, senha_hash, tipo_usuario AS role, aluno_id AS alunoId, professor_id AS professorId
      FROM usuarios WHERE email=?`,
     [email]
   );
   if (!u || !(await bcrypt.compare(senha, u.senha_hash))) {
+    auditLog('auth.login.fail', req, { reason: 'invalid_credentials', email: maskEmail(email) });
     return res.status(401).json({ error: 'Credenciais inválidas' });
   }
   const payload = { id: u.id, role: u.role, alunoId: u.alunoId, professorId: u.professorId };
   setAuthCookie(res, signToken(payload, JWT_SECRET));
+  auditLog('auth.login.ok', req, { uid: u.id, role: u.role, email: maskEmail(u.email) });
   res.json({ id: u.id, nome: u.nome, email: u.email, role: u.role, alunoId: u.alunoId, professorId: u.professorId });
 }));
 
-app.post('/api/auth/logout', (_req, res) => {
+app.post('/api/auth/logout', (req, res) => {
   clearAuthCookie(res);
+  if (req.user) auditLog('auth.logout', req, { uid: req.user.id });
   res.json({ ok: true });
 });
 

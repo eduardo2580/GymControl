@@ -51,6 +51,17 @@ resource "aws_iam_role_policy" "read_secrets" {
   policy = data.aws_iam_policy_document.read_secrets.json
 }
 
+# ─── Auto Scaling: 1 instância única, sem scale-out ──────────────────────────
+# Projeto de showcase quase nunca terá 5 requisições simultâneas. Travamos em
+# 1 instância (sem scale-out) e teto baixo de concorrência — qualquer cenário
+# anômalo simplesmente enfileira em vez de virar uma conta cara.
+resource "aws_apprunner_auto_scaling_configuration_version" "this" {
+  auto_scaling_configuration_name = "${local.name}-asc"
+  max_concurrency = 25
+  min_size        = 1
+  max_size        = 1
+}
+
 # ─── VPC Connector + Service ──────────────────────────────────────────────────
 resource "aws_apprunner_vpc_connector" "this" {
   vpc_connector_name = "${local.name}-vpc-connector"
@@ -60,6 +71,8 @@ resource "aws_apprunner_vpc_connector" "this" {
 
 resource "aws_apprunner_service" "this" {
   service_name = local.name
+
+  auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.this.arn
 
   source_configuration {
     authentication_configuration {

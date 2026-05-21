@@ -41,6 +41,9 @@ jobs:
 
       - run: npm ci
 
+      - name: npm audit (prod, alta+ severidade falha o build)
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Lint
         run: npm run lint
 
@@ -76,3 +79,17 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+
+      # ─── Scans de segurança da imagem Docker ────────────────────────────────
+      # Build local (não envia pra ECR aqui — isso é trabalho do workflow cd.yml).
+      - name: Build Docker image
+        run: docker build -t gymcontrol:ci .
+
+      - name: Trivy — scan da imagem por CVEs (alta+ severidade falha)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: gymcontrol:ci
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
