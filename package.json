@@ -7,8 +7,11 @@
     "start": "node server.js",
     "lint": "eslint . --ext .js --ignore-pattern node_modules --ignore-pattern public/vendor --ignore-pattern test-results --ignore-pattern playwright-report",
     "test": "jest --runInBand --forceExit",
+    "pretest:e2e": "npm run lint && npm test",
     "test:e2e": "playwright test",
-    "test:e2e:human": "playwright test && node scripts/clean-results.js && playwright test --config=playwright.config.human.js && node scripts/concat-e2e-video.js"
+    "pretest:e2e:human": "npm run lint && npm test",
+    "test:e2e:human": "playwright test && node scripts/clean-results.js && playwright test --config=playwright.config.human.js && node scripts/concat-e2e-video.js",
+    "check": "npm run lint && npm test && playwright test"
   },
   "jest": {
     "testEnvironment": "node",

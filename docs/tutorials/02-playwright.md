@@ -30,11 +30,14 @@ npm run test:e2e
 ```
 
 O que acontece:
-1. Playwright sobe o servidor Node automaticamente (via `webServer` no [`playwright.config.js`](../../playwright.config.js)).
-2. Faz login direto pela API para cada papel (admin, professor, aluno) e salva os cookies — assim os testes começam já logados (sem cair no rate-limit de 5 logins/min).
-3. Abre um Chromium **sem janela** (headless).
-4. Roda os 6 testes em paralelo de 1, em ~8 segundos.
-5. Mostra `6 passed`.
+1. **Gate de qualidade**: o hook `pretest:e2e` roda `npm run lint` + `npm test` (Jest) primeiro. Se qualquer um falhar, o Playwright **não** roda.
+2. Playwright sobe o servidor Node automaticamente (via `webServer` no [`playwright.config.js`](../../playwright.config.js)).
+3. Faz login direto pela API para cada papel (admin, professor, aluno) e salva os cookies — assim os testes começam já logados (sem cair no rate-limit de 5 logins/min).
+4. Abre um Chromium **sem janela** (headless).
+5. Roda os 6 testes em paralelo de 1, em ~8 segundos.
+6. Mostra `6 passed`.
+
+> 💡 Pra rodar só o Playwright sem o gate (ex.: você sabe que o restante já passou), use `npx playwright test` direto.
 
 Se algum teste falhar, ele grava um screenshot e um trace em `test-results/`. Pra abrir o relatório bonitinho:
 
@@ -52,13 +55,14 @@ npm run test:e2e:human
 
 O comando faz uma sequência:
 
-1. **Roda o modo rápido primeiro como gate** — se algum teste falhar aqui, o resto não roda. Você não quer um vídeo de 1 minuto mostrando um teste quebrado.
-2. **Limpa `test-results/`** pra não misturar com vídeos da rodada anterior.
-3. **Reroda a suíte** com:
+1. **Gate de qualidade** (via `pretest:e2e:human`): roda `npm run lint` + `npm test`. Se falhar, nada do Playwright roda.
+2. **Roda o modo rápido em seguida como segundo gate** — se algum teste falhar aqui, o resto não roda. Você não quer um vídeo de 1 minuto mostrando um teste quebrado.
+3. **Limpa `test-results/`** pra não misturar com vídeos da rodada anterior.
+4. **Reroda a suíte** com:
    - Janela do navegador **visível** (você vê tudo acontecendo).
    - Pausa de **1 segundo** entre cada ação (`slowMo: 1000`).
    - **Vídeo gravado** em cada teste (config em [`playwright.config.human.js`](../../playwright.config.human.js)).
-4. **Usa `ffmpeg`** (já incluído via `ffmpeg-static`, não precisa instalar nada) pra **costurar todos os vídeos num único arquivo**:
+5. **Usa `ffmpeg`** (já incluído via `ffmpeg-static`, não precisa instalar nada) pra **costurar todos os vídeos num único arquivo**:
    ```
    test-results/human-e2e.mp4
    ```
