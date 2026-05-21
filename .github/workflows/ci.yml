@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Test
+        run: npm test --if-present
+
+      - name: Validate SQL schema (MySQL)
+        uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql version: '8.0'
+          mysql root password: root
+          mysql database: gymcontrol
+
+      - name: Wait for MySQL and load schema
+        run: |
+          for i in $(seq 1 30); do
+            mysqladmin ping -h127.0.0.1 -uroot -proot --silent && break
+            sleep 2
+          done
+          mysql -h127.0.0.1 -uroot -proot gymcontrol < sql/01_schema.sql
+          mysql -h127.0.0.1 -uroot -proot gymcontrol < sql/02_seed.sql
+          mysql -h127.0.0.1 -uroot -proot --force gymcontrol < sql/04_tests.sql | tee test_output.txt
+          ! grep -q "FAIL" test_output.txt
