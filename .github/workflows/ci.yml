@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: gymcontrol
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: gymcontrol
+      JWT_SECRET: ci-test-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: npm audit (prod, alta+ severidade falha o build)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Wait for MySQL and load schema + seed
+        run: |
+          for i in $(seq 1 30); do
+            mysqladmin ping -h127.0.0.1 -uroot -proot --silent && break
+            sleep 2
+          done
+          mysql -h127.0.0.1 -uroot -proot --default-character-set=utf8mb4 < sql/01_schema.sql
+          mysql -h127.0.0.1 -uroot -proot --default-character-set=utf8mb4 gymcontrol < sql/02_seed.sql
+
+      - name: SQL constraint tests
+        run: |
+          mysql -h127.0.0.1 -uroot -proot --default-character-set=utf8mb4 --force gymcontrol < sql/04_tests.sql | tee sql_test_output.txt
+          ! grep -q "FAIL" sql_test_output.txt
+
+      - name: Jest API tests
+        run: npm test
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright E2E (fast)
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+      # ─── Scans de segurança da imagem Docker ────────────────────────────────
+      # Build local (não envia pra ECR aqui — isso é trabalho do workflow cd.yml).
+      - name: Build Docker image
+        run: docker build -t gymcontrol:ci .
+
+      - name: Trivy — scan da imagem por CVEs (alta+ severidade falha)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: gymcontrol:ci
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL

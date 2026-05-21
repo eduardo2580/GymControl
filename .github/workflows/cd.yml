@@ -1,0 +1,118 @@
+# Deploy contínuo: build da imagem, push pro ECR e disparo de novo deploy
+# no App Runner.
+#
+# Pré-requisitos (uma vez, na conta AWS):
+#   1. Criar um OIDC provider para o GitHub:
+#        token.actions.githubusercontent.com
+#   2. Criar um IAM role assumível pelo OIDC (trust restrita ao repo
+#      'DyeAllPies/GymControl', ref main) com policy mínima:
+#        - ecr:GetAuthorizationToken
+#        - ecr:BatchCheckLayerAvailability, BatchGetImage, PutImage,
+#          InitiateLayerUpload, UploadLayerPart, CompleteLayerUpload
+#        - apprunner:StartDeployment, ListServices, DescribeService
+#   3. Salvar o ARN do role como o secret AWS_DEPLOY_ROLE_ARN no GitHub.
+#
+# Sem o secret AWS_DEPLOY_ROLE_ARN configurado, este workflow não roda.
+
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# OIDC: sem usuários IAM longos-prazo, sem access keys.
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ vars.ENABLE_CD == 'true' }}
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: sa-east-1
+      ECR_REPOSITORY: gymcontrol-showcase
+      APPRUNNER_SERVICE_NAME: gymcontrol-showcase
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (via OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 900
+
+      - name: Login no ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        id: build
+        run: |
+          IMAGE_URI=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          LATEST_URI=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          docker build -t "$IMAGE_URI" -t "$LATEST_URI" .
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+          echo "latest_uri=$LATEST_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Trivy gate (não envia imagem com CVE alta/crítica)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build.outputs.image_uri }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+      - name: Push pro ECR
+        run: |
+          docker push "${{ steps.build.outputs.image_uri }}"
+          docker push "${{ steps.build.outputs.latest_uri }}"
+
+      - name: Disparar deploy no App Runner
+        run: |
+          SERVICE_ARN=$(aws apprunner list-services \
+            --region "$AWS_REGION" \
+            --query "ServiceSummaryList[?ServiceName=='${APPRUNNER_SERVICE_NAME}'].ServiceArn" \
+            --output text)
+          if [ -z "$SERVICE_ARN" ] || [ "$SERVICE_ARN" = "None" ]; then
+            echo "Service '${APPRUNNER_SERVICE_NAME}' não encontrado. Rode 'terraform apply' primeiro." >&2
+            exit 1
+          fi
+          aws apprunner start-deployment --region "$AWS_REGION" --service-arn "$SERVICE_ARN"
+          echo "Deploy iniciado. Acompanhe em https://console.aws.amazon.com/apprunner/"
+
+      - name: Aguarda o serviço voltar a 'RUNNING'
+        run: |
+          SERVICE_ARN=$(aws apprunner list-services \
+            --region "$AWS_REGION" \
+            --query "ServiceSummaryList[?ServiceName=='${APPRUNNER_SERVICE_NAME}'].ServiceArn" \
+            --output text)
+          for i in $(seq 1 60); do
+            STATUS=$(aws apprunner describe-service --region "$AWS_REGION" --service-arn "$SERVICE_ARN" --query 'Service.Status' --output text)
+            echo "[$i] status=$STATUS"
+            case "$STATUS" in
+              RUNNING) exit 0 ;;
+              CREATE_FAILED|DELETE_FAILED|OPERATION_IN_PROGRESS) ;;
+              *) ;;
+            esac
+            sleep 10
+          done
+          echo "Serviço não voltou a RUNNING em 10 min." >&2
+          exit 1
+
+      - name: Smoke test no /healthz
+        run: |
+          SERVICE_URL=$(aws apprunner list-services \
+            --region "$AWS_REGION" \
+            --query "ServiceSummaryList[?ServiceName=='${APPRUNNER_SERVICE_NAME}'].ServiceUrl" \
+            --output text)
+          curl -fsS "https://$SERVICE_URL/healthz"

@@ -1,0 +1,46 @@
+# Não precisa nem deve ir pra imagem de produção
+node_modules
+npm-debug.log*
+.npm
+coverage
+.nyc_output
+
+# Repo + ferramentas de dev
+.git
+.github
+.gitignore
+.gitattributes
+.vscode
+.idea
+*.iml
+
+# Testes e artefatos de testes
+tests
+playwright.config.js
+playwright.config.human.js
+playwright
+test-results
+playwright-report
+
+# Documentação (não roda em produção)
+docs
+README.md
+
+# Local
+*.env
+.env.*
+*.db
+*.log
+*.tfstate*
+infra
+
+# Scripts utilitários — ficam fora da imagem
+scripts
+
+# Lint
+eslint.config.js
+
+# Compose só pra dev local
+docker-compose.yml
+Dockerfile
+.dockerignore

@@ -3,12 +3,40 @@
   "version": "2.0.0",
   "description": "Sistema de Gerenciamento de Academia com SQLite",
   "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "lint": "eslint . --ext .js --ignore-pattern node_modules --ignore-pattern public/vendor --ignore-pattern test-results --ignore-pattern playwright-report",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --forceExit",
+    "pretest:e2e": "npm run lint && npm test",
+    "test:e2e": "playwright test",
+    "pretest:e2e:human": "npm run lint && npm test",
+    "test:e2e:human": "playwright test && node scripts/clean-results.js && playwright test --config=playwright.config.human.js && node scripts/concat-e2e-video.js",
+    "check": "npm run lint && npm test && playwright test"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 15000,
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/tests/e2e/"
+    ]
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "eslint": "^9.0.0",
+    "ffmpeg-static": "^5.3.0",
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "sql.js": "^1.10.2"
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.11.0"
   }
 }
