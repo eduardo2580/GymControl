@@ -46,6 +46,15 @@ node_modules/
 # Local env
 .env
 .env.local
+
+# Playwright outputs (videos, screenshots, traces — kept local for human review)
+test-results/
+playwright-report/
+playwright/.cache/
+playwright/.auth/
+
+# Jest coverage
+coverage/
 jspm_packages/
 
 # Snowpack dependency directory (https://snowpack.dev/)

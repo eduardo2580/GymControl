@@ -5,15 +5,23 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "lint": "eslint . --ext .js --ignore-pattern node_modules --ignore-pattern public/vendor",
-    "test": "jest --runInBand --forceExit"
+    "lint": "eslint . --ext .js --ignore-pattern node_modules --ignore-pattern public/vendor --ignore-pattern test-results --ignore-pattern playwright-report",
+    "test": "jest --runInBand --forceExit",
+    "test:e2e": "playwright test",
+    "test:e2e:human": "playwright test && node scripts/clean-results.js && playwright test --config=playwright.config.human.js && node scripts/concat-e2e-video.js"
   },
   "jest": {
     "testEnvironment": "node",
-    "testTimeout": 15000
+    "testTimeout": 15000,
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/tests/e2e/"
+    ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "eslint": "^9.0.0",
+    "ffmpeg-static": "^5.3.0",
     "jest": "^30.4.2",
     "supertest": "^7.2.2"
   },
