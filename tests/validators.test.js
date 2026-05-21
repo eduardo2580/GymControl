@@ -1,6 +1,6 @@
-const {
+import {
   BadRequest, normalizeCpf, formatCpf, isValidCpf, requireFields, isValidYearMonth,
-} = require('../lib/validators');
+} from '../lib/validators.js';
 
 describe('normalizeCpf', () => {
   test('strips non-digits', () => {

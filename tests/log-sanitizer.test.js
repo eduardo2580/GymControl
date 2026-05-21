@@ -1,4 +1,4 @@
-const { sanitize, sanitizeError, redactString } = require('../lib/log-sanitizer');
+import { sanitize, sanitizeError, redactString } from '../lib/log-sanitizer.js';
 
 describe('redactString', () => {
   test('redacts CPF in any format', () => {

@@ -1,4 +1,9 @@
-const { splitStatements } = require('../lib/migrate');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { splitStatements } from '../lib/migrate.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('splitStatements', () => {
   test('split simples por ponto-e-vírgula', () => {
@@ -34,8 +39,6 @@ describe('splitStatements', () => {
   });
 
   test('arquivo schema do projeto produz pelo menos 8 statements (8 tabelas + use + create db ...)', () => {
-    const fs = require('fs');
-    const path = require('path');
     const schema = fs.readFileSync(path.join(__dirname, '..', 'sql', '01_schema.sql'), 'utf8');
     const out = splitStatements(schema);
     // 1 CREATE DATABASE + 1 USE + 1 SET FK=0 + 8 DROP TABLE + 1 SET FK=1 + 8 CREATE + 1 ALTER = 21+

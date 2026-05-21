@@ -1,10 +1,10 @@
 // Slow, screen-recorded Playwright config for human review.
 // Use: npm run test:e2e:human  (after `npm run test:e2e` passes — enforced by the script).
 // Videos land in test-results/ (gitignored).
-const base = require('./playwright.config.js');
-const { defineConfig } = require('@playwright/test');
+import { defineConfig, devices } from '@playwright/test';
+import base from './playwright.config.js';
 
-module.exports = defineConfig({
+export default defineConfig({
   ...base,
   workers: 1,
   retries: 0,
@@ -17,6 +17,6 @@ module.exports = defineConfig({
     trace: 'on',
   },
   projects: [
-    { name: 'chromium-human', use: { ...require('@playwright/test').devices['Desktop Chrome'] } },
+    { name: 'chromium-human', use: { ...devices['Desktop Chrome'] } },
   ],
 });

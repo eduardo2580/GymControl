@@ -1,13 +1,15 @@
 // Reseta o DB e gera storageState para cada papel — assim os testes não
 // precisam fazer login na UI (e portanto não disparam o rate-limit de 5/min).
-const fs = require('fs');
-const path = require('path');
-const { request } = require('@playwright/test');
-const { resetDb, ACCOUNTS } = require('../helpers');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { request } from '@playwright/test';
+import { resetDb, ACCOUNTS } from '../helpers.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_DIR = path.join(__dirname, '..', '..', 'playwright', '.auth');
 
-module.exports = async (config) => {
+export default async function globalSetup(config) {
   await resetDb();
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 
@@ -22,4 +24,4 @@ module.exports = async (config) => {
     await ctx.storageState({ path: path.join(AUTH_DIR, `${role}.json`) });
     await ctx.dispose();
   }
-};
+}

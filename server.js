@@ -1,18 +1,19 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const cookieParser = require('cookie-parser');
-const rateLimit = require('express-rate-limit');
-const bcrypt = require('bcrypt');
-const mysql = require('mysql2/promise');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+import bcrypt from 'bcrypt';
+import mysql from 'mysql2/promise';
+import { fileURLToPath } from 'url';
 
-const {
+import {
   BadRequest, normalizeCpf, formatCpf, isValidCpf, requireFields,
-} = require('./lib/validators');
-const {
+} from './lib/validators.js';
+import {
   setAuthCookie, clearAuthCookie, signToken, makeAuthenticate, requireAuth, requireRole,
-} = require('./lib/auth');
-const { sanitizeError } = require('./lib/log-sanitizer');
+} from './lib/auth.js';
+import { sanitizeError } from './lib/log-sanitizer.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -661,13 +662,13 @@ app.get('/api/health', wrap(async (_req, res) => {
 }));
 
 // ─── START ───────────────────────────────────────────────────────────────────
-module.exports = { app, pool };
+export { app, pool };
 
 async function start() {
   // Auto-migração no primeiro boot (usado pelo App Runner contra um RDS vazio).
   // NÃO roda em dev local nem em testes (sem AUTO_MIGRATE=1).
   if (process.env.AUTO_MIGRATE === '1') {
-    const { runMigrationIfNeeded } = require('./lib/migrate');
+    const { runMigrationIfNeeded } = await import('./lib/migrate.js');
     try {
       const r = await runMigrationIfNeeded({
         host: process.env.DB_HOST,
@@ -688,7 +689,10 @@ async function start() {
   });
 }
 
-if (require.main === module) {
+// Em ESM, "fui invocado diretamente?" é via comparação import.meta.url ↔ argv[1].
+const isMain = fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isMain) {
   start().catch(err => {
     console.error('Falha ao subir:', err.message);
     process.exit(1);

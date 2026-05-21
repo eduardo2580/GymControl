@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // Junta todos os vídeos .webm gerados pelo Playwright human-paced num único
 // arquivo .mp4 (test-results/human-e2e.mp4) para revisão humana / compartilhamento.
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const { spawnSync } = require('child_process');
-const ffmpeg = require('ffmpeg-static');
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import { spawnSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import ffmpeg from 'ffmpeg-static';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const RESULTS = path.join(ROOT, 'test-results');
 const OUT = path.join(RESULTS, 'human-e2e.mp4');

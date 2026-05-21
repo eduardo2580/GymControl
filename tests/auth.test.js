@@ -1,6 +1,6 @@
-const {
+import {
   signToken, makeAuthenticate, requireAuth, requireRole, setAuthCookie, clearAuthCookie, COOKIE_NAME,
-} = require('../lib/auth');
+} from '../lib/auth.js';
 
 function mockReq(cookies = {}, user) { return { cookies, user }; }
 function mockRes() {

@@ -1,6 +1,6 @@
-const request = require('supertest');
-const { app, pool } = require('../server');
-const { resetDb, loginAs, ACCOUNTS } = require('./helpers');
+import request from 'supertest';
+import { app, pool } from '../server.js';
+import { resetDb, loginAs, ACCOUNTS } from './helpers.js';
 
 let admin, professor, aluno;
 

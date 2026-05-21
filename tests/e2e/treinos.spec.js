@@ -1,6 +1,8 @@
 // RF07 — Cadastro de treinos · RF08 — Vincular treinos a alunos (via UI).
-const { test, expect } = require('@playwright/test');
-const path = require('path');
+import { test, expect } from '@playwright/test';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 test.use({ storageState: path.join(__dirname, '..', '..', 'playwright', '.auth', 'professor.json') });
 

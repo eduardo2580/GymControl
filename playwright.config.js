@@ -1,8 +1,8 @@
 // Fast Playwright config used by CI and `npm run test:e2e`.
 // For the slower screen-recorded variant see playwright.config.human.js.
-const { defineConfig, devices } = require('@playwright/test');
+import { defineConfig, devices } from '@playwright/test';
 
-module.exports = defineConfig({
+export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30_000,
   expect: { timeout: 5_000 },
@@ -10,7 +10,7 @@ module.exports = defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
-  globalSetup: require.resolve('./tests/e2e/global-setup.js'),
+  globalSetup: './tests/e2e/global-setup.js',
   use: {
     baseURL: process.env.E2E_BASE_URL || 'http://127.0.0.1:3000',
     trace: 'on-first-retry',

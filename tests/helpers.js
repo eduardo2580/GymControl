@@ -1,11 +1,13 @@
-const fs = require('fs');
-const path = require('path');
-const mysql = require('mysql2/promise');
-const request = require('supertest');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import mysql from 'mysql2/promise';
+import request from 'supertest';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SEED_SQL = fs.readFileSync(path.join(__dirname, '..', 'sql', '02_seed.sql'), 'utf8');
 
-async function resetDb() {
+export async function resetDb() {
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST || '127.0.0.1',
     port: Number(process.env.DB_PORT) || 3306,
@@ -24,7 +26,7 @@ async function resetDb() {
   await conn.end();
 }
 
-async function loginAs(app, email, senha) {
+export async function loginAs(app, email, senha) {
   const res = await request(app)
     .post('/api/auth/login')
     .send({ email, senha });
@@ -33,10 +35,8 @@ async function loginAs(app, email, senha) {
   return { cookie, user: res.body };
 }
 
-const ACCOUNTS = {
+export const ACCOUNTS = {
   admin:     { email: 'admin@gym.com',  senha: 'admin123' },
   professor: { email: 'ana@gym.com',    senha: 'prof123' },
   aluno:     { email: 'joao@aluno.com', senha: 'aluno123' },
 };
-
-module.exports = { resetDb, loginAs, ACCOUNTS };

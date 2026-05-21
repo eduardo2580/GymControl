@@ -55,17 +55,18 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image
+        id: build
         run: |
           IMAGE_URI=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
           LATEST_URI=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
           docker build -t "$IMAGE_URI" -t "$LATEST_URI" .
-          echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
-          echo "LATEST_URI=$LATEST_URI" >> "$GITHUB_ENV"
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+          echo "latest_uri=$LATEST_URI" >> "$GITHUB_OUTPUT"
 
       - name: Trivy gate (não envia imagem com CVE alta/crítica)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.IMAGE_URI }}
+          image-ref: ${{ steps.build.outputs.image_uri }}
           format: table
           exit-code: '1'
           ignore-unfixed: true
@@ -73,8 +74,8 @@ jobs:
 
       - name: Push pro ECR
         run: |
-          docker push "$IMAGE_URI"
-          docker push "$LATEST_URI"
+          docker push "${{ steps.build.outputs.image_uri }}"
+          docker push "${{ steps.build.outputs.latest_uri }}"
 
       - name: Disparar deploy no App Runner
         run: |

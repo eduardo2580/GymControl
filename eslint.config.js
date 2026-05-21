@@ -44,15 +44,15 @@ const browserGlobals = {
   location: 'readonly',
 };
 
-module.exports = [
+export default [
   {
     ignores: ['node_modules/**', 'public/vendor/**', '*.db', 'coverage/**'],
   },
   {
-    files: ['server.js', 'sql/**/*.js'],
+    files: ['server.js', 'lib/**/*.js', 'scripts/**/*.js', 'playwright.config.js', 'playwright.config.human.js', 'eslint.config.js'],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: 'commonjs',
+      sourceType: 'module',
       globals: nodeGlobals,
     },
     rules: {
@@ -66,7 +66,7 @@ module.exports = [
     files: ['tests/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: 'commonjs',
+      sourceType: 'module',
       globals: { ...nodeGlobals, ...jestGlobals },
     },
     rules: {

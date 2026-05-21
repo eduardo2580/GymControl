@@ -3,10 +3,11 @@
   "version": "2.0.0",
   "description": "Sistema de Gerenciamento de Academia com SQLite",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
     "lint": "eslint . --ext .js --ignore-pattern node_modules --ignore-pattern public/vendor --ignore-pattern test-results --ignore-pattern playwright-report",
-    "test": "jest --runInBand --forceExit",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --forceExit",
     "pretest:e2e": "npm run lint && npm test",
     "test:e2e": "playwright test",
     "pretest:e2e:human": "npm run lint && npm test",
