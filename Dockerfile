@@ -16,9 +16,19 @@ RUN apk add --no-cache --virtual .build python3 make g++ \
 # ─── Stage 2: imagem final ────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
 
-# Usuário não-root e curl para o HEALTHCHECK
+# Usuário não-root + curl pro HEALTHCHECK + tini como PID 1.
+# Em seguida REMOVE o npm (e o corepack) — não rodamos npm em produção e o
+# npm bundled trazia CVE-2024-21538 (cross-spawn ReDoS). Imagem fica menor
+# e com menos superfície de ataque.
 RUN apk add --no-cache curl tini \
- && addgroup -S app && adduser -S app -G app
+ && addgroup -S app && adduser -S app -G app \
+ && rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm \
+           /usr/local/bin/npx \
+           /usr/local/bin/corepack \
+           /opt/yarn-v* \
+           /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
 WORKDIR /app
 
